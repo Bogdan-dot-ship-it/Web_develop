@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Blog\Admin;
 
 use App\Models\BlogCategory;
 use Illuminate\Support\Str;
-use Illuminate\Http\Request;
+use App\Http\Requests\BlogCategoryUpdateRequest;
+use App\Http\Requests\BlogCategoryCreateRequest;
+// use Illuminate\Http\Request;
 
 class CategoryController extends BaseController
 {
@@ -15,24 +17,28 @@ class CategoryController extends BaseController
         return $paginator;
     }
 
-    public function store(Request $request)
+    public function store(BlogCategoryCreateRequest $request)
     {
-        $data = $request->all();
+        $data = $request->input();
 
-        if (empty($data['slug']) && !empty($data['title'])) {
+        if (empty($data['slug'])) {
             $data['slug'] = Str::slug($data['title']);
         }
 
-        $item = BlogCategory::create($data);
+        $item = (new BlogCategory())->create($data);
 
         if ($item) {
-            return ['success' => 'Успішно збережено', 'id' => $item->id];
+            return [
+                'success' => true,
+                'message' => 'Успішно збережено',
+                'id'      => $item->id
+            ];
         } else {
-            return ['msg' => 'Помилка збереження'];
+            return ['message' => 'Помилка збереження'];
         }
     }
 
-    public function update(Request $request, string $id)
+    public function update(BlogCategoryUpdateRequest $request, string $id)
     {
         $item = BlogCategory::find($id);
 
@@ -52,7 +58,6 @@ class CategoryController extends BaseController
         } else {
             return ['msg' => 'Помилка збереження'];
         }
-
     }
     public function destroy($id)
     {
