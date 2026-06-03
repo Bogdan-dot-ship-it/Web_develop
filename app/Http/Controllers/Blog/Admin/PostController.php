@@ -6,7 +6,8 @@ use App\Repositories\BlogPostRepository;
 use App\Repositories\BlogCategoryRepository;
 use App\Http\Requests\BlogPostUpdateRequest;
 use Illuminate\Support\Str;
-
+use App\Models\BlogPost;
+use App\Http\Requests\BlogPostCreateRequest;
 class PostController extends BaseController
 {
     public function __construct(
@@ -41,6 +42,30 @@ class PostController extends BaseController
             ];
         } else {
             return response()->json(['message' => 'Помилка збереження'], 500);
+        }
+    }
+
+    public function store(BlogPostCreateRequest $request)
+    {
+        $data = $request->input(); // отримаємо масив даних, які надійшли з форми
+
+        $item = (new BlogPost())->create($data); // створюємо об'єкт і додаємо в БД
+
+        if ($item) {
+            return response()->json(['success' => 'Успішно збережено']);
+        } else {
+            return response()->json(['msg' => 'Помилка збереження'], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        $result = BlogPost::destroy($id);
+
+        if ($result) {
+            return response()->json(['success' => "Статтю з id {$id} успішно видалено"]);
+        } else {
+            return response()->json(['msg' => 'Помилка видалення. Можливо, запис не знайдено'], 404);
         }
     }
 }
