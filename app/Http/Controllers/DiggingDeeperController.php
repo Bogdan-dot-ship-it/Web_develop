@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\BlogPost;
 use Carbon\Carbon;
+use App\Jobs\ProcessVideoJob;
+use App\Jobs\GenerateCatalog\GenerateCatalogMainJob;
 
 class DiggingDeeperController extends Controller
 {
@@ -110,5 +112,20 @@ class DiggingDeeperController extends Controller
         $sortedDescCollection = $collection->sortByDesc('item_id');
 
         // dd(compact('sortedSimpleCollection', 'sortedAscCollection', 'sortedDescCollection'));
+    }
+    public function processVideo()
+    {
+        ProcessVideoJob::dispatch();
+    }
+
+    /**
+     * @link http://localhost/digging_deeper/prepare-catalog
+     * php artisan queue:listen --queue=generate-catalog --tries=3 --delay=10
+     */
+    public function prepareCatalog()
+    {
+        GenerateCatalogMainJob::dispatch();
+
+        return "Завдання відправлено в чергу!";
     }
 }
