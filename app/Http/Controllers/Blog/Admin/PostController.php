@@ -28,40 +28,59 @@ class PostController extends BaseController
 
     public function update(BlogPostUpdateRequest $request, string $id)
     {
-        $item = $this->blogPostRepository->getEdit($id);
+        try {
+            $item = BlogPost::find($id);
 
-        if (empty($item)) {
-            return response()->json(['message' => "Запис id=[{$id}] не знайдено"], 404);
-        }
+            if (empty($item)) {
+                return response()->json(['message' => "Запис id=[{$id}] не знайдено"], 404);
+            }
 
-        $data = $request->all();
+            $data = $request->validated();
+            $result = $item->update($data);
 
-        $result = $item->update($data);
+            if ($result) {
+                return response()->json(['success' => true, 'message' => 'Успішно збережено'], 200);
+            }
 
-        if ($result) {
-            return [
-                'success' => true,
-                'message' => 'Успішно збережено'
-            ];
-        } else {
-            return response()->json(['message' => 'Помилка збереження'], 500);
+            return response()->json(['message' => 'Невідома помилка збереження'], 500);
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Помилка БД: ' . $e->getMessage()], 500);
         }
     }
 
     public function store(BlogPostCreateRequest $request)
     {
-        $data = $request->input();
+        try {
+            $data = $request->validated();
 
-        $item = (new BlogPost())->create($data);
+            if (!isset($data['user_id'])) {
+                $data['user_id'] = 1;
+            }
 
-        if ($item) {
-            $job = new BlogPostAfterCreateJob($item);
-            dispatch($job);
+            $item = BlogPost::create($data);
 
-            return response()->json(['success' => 'Успішно збережено']);
-        } else {
-            return response()->json(['msg' => 'Помилка збереження'], 500);
+            if ($item) {
+                dispatch(new BlogPostAfterCreateJob($item));
+                return response()->json(['success' => 'Успішно збережено'], 201);
+            }
+
+            return response()->json(['message' => 'Невідома помилка збереження'], 500);
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Помилка БД: ' . $e->getMessage()], 500);
         }
+    }
+
+    public function show($id)
+    {
+        $item = BlogPost::with(['user', 'category'])->find($id);
+
+        if (empty($item)) {
+            return response()->json(['message' => 'Запис не знайдено'], 404);
+        }
+
+        return new PostResource($item);
     }
 
     public function destroy($id)
@@ -75,20 +94,5 @@ class PostController extends BaseController
         } else {
             return response()->json(['msg' => 'Помилка видалення. Можливо, запис не знайдено'], 404);
         }
-    }
-
-    /**
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function show($id)
-    {
-        $item = \App\Models\BlogPost::with(['user', 'category'])->find($id);
-
-        if (empty($item)) {
-            return response()->json(['msg' => 'Запис не знайдено'], 404);
-        }
-
-        return response()->json(['data' => $item]);
     }
 }
