@@ -75,4 +75,19 @@ class PostController extends BaseController
             return response()->json(['msg' => 'Помилка видалення. Можливо, запис не знайдено'], 404);
         }
     }
+
+    /**
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function show($id)
+    {
+        $item = \App\Models\BlogPost::with(['user', 'category'])->find($id);
+
+        if (empty($item)) {
+            return response()->json(['msg' => 'Запис не знайдено'], 404);
+        }
+
+        return response()->json(['data' => $item]);
+    }
 }
